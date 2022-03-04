@@ -166,12 +166,18 @@ public class ColorTransform {
   public Matrix downSample(Matrix mat) {
     Matrix newMatrix = new Matrix(mat.getRowDimension(), mat.getColumnDimension() / 2);
     for (int i = 0; i < mat.getColumnDimension(); i += 2) {
-      newMatrix.setMatrix(
-          0,
-          mat.getRowDimension() - 1,
-          i / 2,
-          i / 2,
-          mat.getMatrix(0, mat.getRowDimension() - 1, i, i));
+      Matrix submatrix = mat.getMatrix(0, mat.getRowDimension() - 1, i, i);
+      newMatrix.setMatrix(0, mat.getRowDimension() - 1, i / 2, i / 2, submatrix);
+    }
+    return newMatrix;
+  }
+
+  public Matrix overSample(Matrix mat) {
+    Matrix newMatrix = new Matrix(mat.getRowDimension(), mat.getColumnDimension() * 2);
+    for (int i = 0; i < mat.getColumnDimension(); i++) {
+      Matrix submatrix = mat.getMatrix(0, mat.getRowDimension() - 1, i, i);
+      newMatrix.setMatrix(0, newMatrix.getRowDimension() - 1, i * 2, i * 2, submatrix);
+      newMatrix.setMatrix(0, newMatrix.getRowDimension() - 1, (i * 2) + 1, (i * 2) + 1, submatrix);
     }
     return newMatrix;
   }

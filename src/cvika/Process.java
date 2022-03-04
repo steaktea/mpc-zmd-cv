@@ -17,12 +17,16 @@ public class Process {
 
   private final ColorTransform colorTransform;
   private final ImagePlus imagePlus;
+  private final ColorTransform colorTransformOrig;
+  private final Quality quality;
 
   public Process(ImagePlus imagePlus) {
     this.imagePlus = imagePlus;
+    this.quality = new Quality();
     colorTransform = new ColorTransform(imagePlus.getBufferedImage());
+    colorTransformOrig = new ColorTransform(imagePlus.getBufferedImage());
     this.colorTransform.convertRgbToYcbcr();
-    // test();
+    this.colorTransformOrig.convertRgbToYcbcr();
   }
 
   public ImagePlus getComponent(int component) {
@@ -108,10 +112,75 @@ public class Process {
     // switch case
   }
 
-  private void test() {
-    imagePlus.show("Original Image");
-    this.colorTransform.convertRgbToYcbcr();
-    this.colorTransform.convertYcbcrToRgb();
-    colorTransform.setImageFromRGB().show();
+  public void oversample(int oversampleType) {
+    Matrix cB = new Matrix(colorTransform.getcB().getArray());
+    Matrix cR = new Matrix(colorTransform.getcR().getArray());
+    switch (oversampleType) {
+      case A444:
+        break;
+      case A422:
+        colorTransform.setcB(colorTransform.overSample(cB));
+        colorTransform.setcR(colorTransform.overSample(cR));
+        break;
+      case A411:
+        colorTransform.setcB(colorTransform.overSample(colorTransform.overSample(cB)));
+        colorTransform.setcR(colorTransform.overSample(colorTransform.overSample(cR)));
+        break;
+      case A420:
+        colorTransform.setcB(
+            colorTransform.overSample(colorTransform.overSample(cB).transpose()).transpose());
+        colorTransform.setcR(
+            colorTransform.overSample(colorTransform.overSample(cR).transpose()).transpose());
+        break;
+      default:
+        break;
+    }
+    // switch case
+  }
+
+  public double getMse() {
+    int imageHeight = colorTransform.getImageHeight();
+    int imageWidth = colorTransform.getImageWidth();
+    int cbHeight = colorTransform.getcB().getColumnDimension();
+    int cbWidth = colorTransform.getcB().getRowDimension();
+    int crHeight = colorTransform.getcB().getColumnDimension();
+    int crWidth = colorTransform.getcB().getRowDimension();
+
+    if (imageHeight != cbHeight
+        || imageHeight != crHeight
+        || imageWidth != cbWidth
+        || imageWidth != crWidth) {
+      return Double.NEGATIVE_INFINITY;
+    }
+    colorTransform.convertYcbcrToRgb();
+    double a = quality.getMse(colorTransformOrig.getRed(), colorTransform.getRed());
+    double b = quality.getMse(colorTransformOrig.getGreen(), colorTransform.getGreen());
+    double c = quality.getMse(colorTransformOrig.getBlue(), colorTransform.getBlue());
+    return (Math.round(100 * (a + b + c) / 3.0) / 100.0);
+  }
+
+  public double getPsnr() {
+    int imageHeight = colorTransform.getImageHeight();
+    int imageWidth = colorTransform.getImageWidth();
+    int cbHeight = colorTransform.getcB().getColumnDimension();
+    int cbWidth = colorTransform.getcB().getRowDimension();
+    int crHeight = colorTransform.getcB().getColumnDimension();
+    int crWidth = colorTransform.getcB().getRowDimension();
+
+    if (imageHeight != cbHeight
+        || imageHeight != crHeight
+        || imageWidth != cbWidth
+        || imageWidth != crWidth) {
+      return Double.NEGATIVE_INFINITY;
+    }
+
+    colorTransform.convertYcbcrToRgb();
+    double a = quality.getPsnr(colorTransformOrig.getRed(), colorTransform.getRed());
+    double b = quality.getPsnr(colorTransformOrig.getGreen(), colorTransform.getGreen());
+    double c = quality.getPsnr(colorTransformOrig.getBlue(), colorTransform.getBlue());
+    double result = Math.round(100 * (a + b + c) / 3.0) / 100.0;
+    if (result > 1000) result = Double.POSITIVE_INFINITY;
+
+    return result;
   }
 }

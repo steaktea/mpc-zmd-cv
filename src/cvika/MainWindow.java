@@ -19,6 +19,11 @@ public class MainWindow {
   private JButton a422Button;
   private JButton a420Button;
   private JButton a411Button;
+  private JComboBox sampling;
+  private JLabel origPsnr;
+  private JLabel sampledPsnr;
+  private JLabel origMse;
+  private JLabel sampledMse;
   private Process process;
 
   public MainWindow() {
@@ -69,28 +74,48 @@ public class MainWindow {
         new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent actionEvent) {
-            process.downsample(Process.A444);
+            if ("downsample" == sampling.getSelectedItem()) {
+              process.downsample(Process.A444);
+            } else if ("oversample" == sampling.getSelectedItem()) {
+              process.oversample(Process.A444);
+            }
+            setMsePsnr();
           }
         });
     a422Button.addActionListener(
         new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent actionEvent) {
-            process.downsample(Process.A422);
+            if ("downsample" == sampling.getSelectedItem()) {
+              process.downsample(Process.A422);
+            } else if ("oversample" == sampling.getSelectedItem()) {
+              process.oversample(Process.A422);
+            }
+            setMsePsnr();
           }
         });
     a420Button.addActionListener(
         new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent actionEvent) {
-            process.downsample(Process.A420);
+            if ("downsample" == sampling.getSelectedItem()) {
+              process.downsample(Process.A420);
+            } else if ("oversample" == sampling.getSelectedItem()) {
+              process.oversample(Process.A420);
+            }
+            setMsePsnr();
           }
         });
     a411Button.addActionListener(
         new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent actionEvent) {
-            process.downsample(Process.A411);
+            if ("downsample" == sampling.getSelectedItem()) {
+              process.downsample(Process.A411);
+            } else if ("oversample" == sampling.getSelectedItem()) {
+              process.oversample(Process.A411);
+            }
+            setMsePsnr();
           }
         });
   }
@@ -105,8 +130,28 @@ public class MainWindow {
     new cvika.MainWindow();
   }
 
+  private void setMsePsnr() {
+    if (process.getMse() != Double.NEGATIVE_INFINITY) {
+      sampledMse.setText("MSE: " + process.getMse());
+    } else {
+      sampledMse.setText("Cb or Cr size does not match the image.");
+    }
+    if (process.getMse() != Double.NEGATIVE_INFINITY) {
+      sampledPsnr.setText("PSNR: " + process.getPsnr());
+    } else {
+      sampledPsnr.setText("Cb or Cr size does not match the image.");
+    }
+  }
+
   private void initialize() {
     ImagePlus originalImage = new ImagePlus("Lenna.png");
+    sampling.addItem("do nothing");
+    sampling.addItem("downsample");
+    sampling.addItem("oversample");
     this.process = new Process(originalImage);
+    origMse.setText("MSE: " + process.getMse());
+    origPsnr.setText("PSNR: " + process.getMse());
+    sampledMse.setText("MSE: " + process.getMse());
+    sampledPsnr.setText("PSNR: " + process.getMse());
   }
 }
